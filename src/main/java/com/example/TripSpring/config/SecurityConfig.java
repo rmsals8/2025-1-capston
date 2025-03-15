@@ -40,6 +40,8 @@ public class SecurityConfig implements WebMvcConfigurer {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
     @Value("${app.api.key}")
     private String apiKey;
     @Bean
@@ -120,7 +122,7 @@ public class SecurityConfig implements WebMvcConfigurer {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:8080", "http://10.0.2.2:8080")
+                    .allowedOrigins("http://localhost:8080", "http://10.0.2.2:8080",allowedOrigins)
                     .allowedMethods("*")
                     .allowedHeaders("*")
                     .allowCredentials(true);
@@ -132,7 +134,8 @@ public class SecurityConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:8080", 
-            "http://10.0.2.2:8080"
+            "http://10.0.2.2:8080",
+            allowedOrigins
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
