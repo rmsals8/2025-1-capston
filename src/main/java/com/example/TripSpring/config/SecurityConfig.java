@@ -29,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -116,27 +117,42 @@ public class SecurityConfig implements WebMvcConfigurer {
             }
         }
     }
+    
+    // 오리진 합치는 헬퍼 메소드 추가
+    private String[] combineOrigins() {
+        List<String> originList = new ArrayList<>();
+        originList.add("http://localhost:8080");
+        originList.add("http://10.0.2.2:8080");
+        if (allowedOrigins != null) {
+            originList.addAll(Arrays.asList(allowedOrigins));
+        }
+        return originList.toArray(new String[0]);
+    }
+    
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:8080", "http://10.0.2.2:8080",allowedOrigins)
+                    .allowedOrigins(combineOrigins())  // 수정된 부분
                     .allowedMethods("*")
                     .allowedHeaders("*")
                     .allowCredentials(true);
             }
         };
     }
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:8080", 
-            "http://10.0.2.2:8080",
-            allowedOrigins
-        ));
+        List<String> originPatterns = new ArrayList<>();
+        originPatterns.add("http://localhost:8080");
+        originPatterns.add("http://10.0.2.2:8080");
+        if (allowedOrigins != null) {
+            originPatterns.addAll(Arrays.asList(allowedOrigins));
+        }
+        configuration.setAllowedOrigins(originPatterns);  // 수정된 부분
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
@@ -155,6 +171,7 @@ public class SecurityConfig implements WebMvcConfigurer {
             .baseUrl("https://maps.googleapis.com")
             .build();
     }
+    
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         StringHttpMessageConverter converter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
