@@ -27,10 +27,14 @@ public class KakaoOAuth2Service {
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
-    private final String REDIRECT_URI = "http://localhost:8080/api/oauth2/callback/kakao";
+    // private final String REDIRECT_URI = "https://43b2-203-250-67-107.ngrok-free.app/api/oauth2/callback/kakao";
     private static final String KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
     private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
 
+    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
+    private String REDIRECT_URI;
+    
+    
     @Value("${app.api.kakao}")
     private String clientId;
     
@@ -44,7 +48,7 @@ public class KakaoOAuth2Service {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", clientId); 
-        params.add("redirect_uri", "http://localhost:8080/api/oauth2/callback/kakao");
+        params.add("redirect_uri", REDIRECT_URI);
         params.add("code", code);
         params.add("client_secret", clientSecret);  // 하드코딩 대신 주입된 값 사용
     
