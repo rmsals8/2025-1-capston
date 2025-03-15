@@ -122,6 +122,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     private String[] combineOrigins() {
         List<String> originList = new ArrayList<>();
         originList.add("http://localhost:8080");
+        originList.add("http://localhost:*"); // 추가: 모든 localhost 포트 허용
         originList.add("http://10.0.2.2:8080");
         if (allowedOrigins != null) {
             originList.addAll(Arrays.asList(allowedOrigins));
@@ -146,13 +147,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> originPatterns = new ArrayList<>();
-        originPatterns.add("http://localhost:8080");
-        originPatterns.add("http://10.0.2.2:8080");
-        if (allowedOrigins != null) {
-            originPatterns.addAll(Arrays.asList(allowedOrigins));
-        }
-        configuration.setAllowedOrigins(originPatterns);  // 수정된 부분
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*")); // 모든 localhost 포트 허용
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
