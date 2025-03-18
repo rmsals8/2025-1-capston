@@ -13,7 +13,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,26 +35,30 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig implements WebMvcConfigurer {
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;  // 추가
+public class SecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;  
+    
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+    
     @Value("${app.cors.allowed-origins}")
     private String[] allowedOrigins;
+    
     @Value("${app.api.key}")
     private String apiKey;
+    
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -81,7 +84,6 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .requestMatchers("/api/v1/users/me").authenticated()
                 .anyRequest().authenticated()
             )
-            // JWT 필터 추가 (이 부분이 중요!)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
             
         return http.build();
@@ -118,16 +120,23 @@ public class SecurityConfig implements WebMvcConfigurer {
         }
     }
     
-    // 오리진 합치는 헬퍼 메소드 추가
-    private String[] combineOrigins() {
-        List<String> originList = new ArrayList<>();
-        originList.add("http://localhost:8080");
-        originList.add("http://localhost:*"); // 추가: 모든 localhost 포트 허용
-        originList.add("http://10.0.2.2:8080");
+    // 오리진 허용 패턴 정의
+    private List<String> allowedOriginPatterns() {
+        List<String> patterns = new ArrayList<>();
+        patterns.add("http://localhost:*");
+        patterns.add("http://10.0.2.2:*");
+        
+        // allowedOrigins 배열이 있으면 변환하여 추가
         if (allowedOrigins != null) {
-            originList.addAll(Arrays.asList(allowedOrigins));
+            for (String origin : allowedOrigins) {
+                if (origin.contains("*")) {
+                    patterns.add(origin);
+                } else {
+                    patterns.add(origin);
+                }
+            }
         }
-        return originList.toArray(new String[0]);
+        return patterns;
     }
     
     @Bean
@@ -136,10 +145,12 @@ public class SecurityConfig implements WebMvcConfigurer {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins(combineOrigins())  // 수정된 부분
-                    .allowedMethods("*")
+                    .allowedOriginPatterns("http://localhost:*", "http://10.0.2.2:*")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*")
-                    .allowCredentials(true);
+                    .exposedHeaders("Authorization")
+                    .allowCredentials(true)
+                    .maxAge(3600);
             }
         };
     }
@@ -147,7 +158,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*")); // 모든 localhost 포트 허용
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
@@ -159,19 +170,11 @@ public class SecurityConfig implements WebMvcConfigurer {
         return source;
     }
 
-
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
             .baseUrl("https://maps.googleapis.com")
             .build();
-    }
-    
-    @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        StringHttpMessageConverter converter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
-        converter.setWriteAcceptCharset(false);
-        converters.add(0, converter);
     }
     
     @Bean
@@ -180,5 +183,10 @@ public class SecurityConfig implements WebMvcConfigurer {
         filter.setEncoding("UTF-8");
         filter.setForceEncoding(true);
         return filter;
+    }
+    
+    @Bean
+    public HttpMessageConverter<String> responseBodyConverter() {
+        return new StringHttpMessageConverter(StandardCharsets.UTF_8);
     }
 }
