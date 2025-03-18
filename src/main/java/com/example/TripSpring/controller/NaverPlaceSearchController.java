@@ -14,7 +14,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/places")  // API 경로 추가
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")   
+// @CrossOrigin(origins = "*")   
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class NaverPlaceSearchController {
     private final NaverPlaceSearchService naverPlaceSearchService;
 
