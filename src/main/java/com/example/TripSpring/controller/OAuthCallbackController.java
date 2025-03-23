@@ -19,7 +19,7 @@ import com.example.TripSpring.service.oauth.KakaoOAuth2Service;
 import com.example.TripSpring.service.oauth.NaverOAuth2Service;
 
 @RestController
-@RequestMapping("/api/oauth2/callback")
+@RequestMapping("/api/v1/oauth2/callback")
 public class OAuthCallbackController {
 
     private final KakaoOAuth2Service kakaoOAuth2Service;
